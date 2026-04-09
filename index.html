@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>神奈川講習会ポータル</title>
+    <style>
+        /* 全体の設定：スマホ標準フォントを適用、余白を微調整 */
+        * { box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Arial, Meiryo, sans-serif; 
+            padding: 10px; /* スマホ画面を広く使うために余白を少し減らす */
+            max-width: 600px; 
+            margin: auto; 
+            line-height: 1.6; 
+            color: #333; 
+            background-color: #f4f7f6; 
+        }
+        h1 { font-size: 1.3em; text-align: center; color: #0056b3; margin: 10px 0 20px 0; }
+        
+        /* 各セクションのカードデザイン */
+        section { 
+            background: white; 
+            padding: 20px 15px; 
+            border-radius: 12px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05); 
+        }
+        h2 { font-size: 1.1em; border-left: 4px solid #0056b3; padding-left: 10px; margin-top: 0; margin-bottom: 15px; }
+        
+        /* 検索エリア（指でタップしやすいサイズ感に調整） */
+        .search-box { display: flex; flex-direction: column; gap: 10px; }
+        .search-label { font-size: 0.85em; font-weight: bold; color: #666; margin-top: 5px; }
+        
+        /* selectとinputのフォントサイズを16px以上に（iOSの自動ズーム防止） */
+        select, input[type="text"] { 
+            width: 100%; 
+            padding: 14px; /* タップ領域を広げる */
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            font-size: 16px; 
+            background-color: #fdfdfd; 
+            appearance: none; /* デフォルトの矢印を消してカスタマイズしやすくする */
+        }
+        
+        .btn-search { 
+            background-color: #0056b3; 
+            color: white; 
+            border: none; 
+            padding: 16px; /* ボタンを大きく */
+            border-radius: 8px; 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 15px; 
+            box-shadow: 0 2px 4px rgba(0,86,179,0.3);
+        }
+        .btn-search:active { background-color: #004494; transform: translateY(2px); }
+
+        /* スケジュールタブ */
+        .tab-container { display: flex; gap: 5px; margin-bottom: 10px; }
+        .tab { 
+            flex: 1; 
+            padding: 12px 5px; /* タップしやすく */
+            text-align: center; 
+            background: #e9ecef; 
+            border-radius: 8px 8px 0 0; 
+            font-size: 0.9em; 
+            font-weight: bold; 
+            color: #555;
+            transition: background 0.2s;
+        }
+        .tab.active { background: #0056b3; color: white; }
+        
+        /* テーブルのスマホ対応（はみ出す場合は横スクロール） */
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch; /* iOSでのスクロールを滑らかに */
+        }
+        table { width: 100%; min-width: 300px; border-collapse: collapse; font-size: 0.9em; }
+        th, td { border: 1px solid #eee; padding: 12px 8px; text-align: left; }
+        th { background: #f8f9fa; color: #444; }
+        th:first-child, td:first-child { white-space: nowrap; width: 25%; text-align: center; font-weight: bold; } /* 時間の列が折り返されないように */
+
+        .result-area { margin-top: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h1>神奈川講習会ポータル</h1>
+
+    <section>
+        <h2>グループ・担当確認</h2>
+        <div class="search-box">
+            <div class="search-label">1. カテゴリを選択</div>
+            <select id="searchCategory" onchange="updateFilterData()">
+                <option value="ジュニア">ジュニア選手</option>
+                <option value="指導者">指導者</option>
+            </select>
+
+            <div class="search-label">2. チーム名で絞り込み</div>
+            <select id="teamSelect" onchange="renderNameSelect()">
+                <option value="">すべてのチーム</option>
+            </select>
+
+            <div class="search-label">3. 氏名を選択</div>
+            <select id="nameSelect">
+                <option value="">氏名を選択してください</option>
+            </select>
+            
+            <button class="btn-search" onclick="searchGroup()">検索する</button>
+        </div>
+        <div id="searchResult" class="result-area"></div>
+    </section>
+
+    <section>
+        <h2>本日のスケジュール</h2>
+        <div class="tab-container">
+            <div class="tab active" onclick="switchTab(this, 'ジュニア')">ジュニア</div>
+            <div class="tab" onclick="switchTab(this, '指導者A')">指導者Aグループ</div>
+            <div class="tab" onclick="switchTab(this, '指導者B')">指導者Bグループ</div>
+        </div>
+        <div id="scheduleResult">
+            <p style="text-align: center; color: #999; padding: 20px 0;">読み込み中...</p>
+        </div>
+    </section>
+
+    <script>
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbzQSaZPCSUmcmbvdqowknDXgpghgqLpx9rUeHzwnUhbht9L_Q2CHwcsXZdqmFZunMc/exec';
+        
+        let localUsers = [];
+
+        window.onload = () => {
+            loadSchedule('ジュニア');
+            updateFilterData();
+        };
+
+        async function switchTab(el, category) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            loadSchedule(category);
+        }
+
+        async function loadSchedule(category) {
+            const container = document.getElementById('scheduleResult');
+            container.innerHTML = '<p style="text-align:center; padding: 20px 0;">読み込み中...</p>';
+            try {
+                const response = await fetch(`${GAS_URL}?action=getSchedule&category=${encodeURIComponent(category)}`);
+                const data = await response.json();
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<p style="text-align:center; padding: 20px 0;">予定はありません</p>';
+                    return;
+                }
+                
+                let html = ''; // 追加するHTMLを空で用意
+
+                // ▼ここが追加ポイント！「ジュニア」の時だけコート図の画像タグを挿入する
+                if (category === 'ジュニア') {
+                    html += `
+                        <div style="margin-bottom: 20px; text-align: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                            <p style="font-size: 0.85em; font-weight: bold; color: #555; margin: 0 0 10px 0;">【本日のコート配置図（変則18コート）】</p>
+                            <img src="./court.png" alt="コート配置図" style="max-width: 100%; height: auto; border-radius: 4px;">
+                        </div>
+                    `;
+                }
+                
+                // テーブル部分を作成
+                html += '<div class="table-responsive"><table><thead><tr><th>時間</th><th>内容</th></tr></thead><tbody>';
+                data.forEach(item => html += `<tr><td>${item.time}</td><td>${item.event}</td></tr>`);
+                html += '</tbody></table></div>';
+                
+                container.innerHTML = html;
+            } catch (e) {
+                container.innerHTML = '<p style="color:red; text-align:center;">エラーが発生しました</p>';
+            }
+        }
+
+        async function updateFilterData() {
+            const category = document.getElementById('searchCategory').value;
+            const teamSelect = document.getElementById('teamSelect');
+            const nameSelect = document.getElementById('nameSelect');
+            
+            teamSelect.innerHTML = '<option value="">読み込み中...</option>';
+            nameSelect.innerHTML = '<option value="">読み込み中...</option>';
+
+            try {
+                const response = await fetch(`${GAS_URL}?action=getFilterData&category=${encodeURIComponent(category)}`);
+                const data = await response.json();
+                
+                localUsers = data.users; 
+
+                let teamHtml = '<option value="">すべてのチーム</option>';
+                data.teams.forEach(team => teamHtml += `<option value="${team}">${team}</option>`);
+                teamSelect.innerHTML = teamHtml;
+
+                renderNameSelect();
+            } catch (e) {
+                teamSelect.innerHTML = '<option value="">エラー</option>';
+                nameSelect.innerHTML = '<option value="">エラー</option>';
+            }
+        }
+
+        function renderNameSelect() {
+            const selectedTeam = document.getElementById('teamSelect').value;
+            const nameSelect = document.getElementById('nameSelect');
+            
+            let filteredUsers = localUsers;
+            if (selectedTeam) {
+                filteredUsers = localUsers.filter(user => user.team === selectedTeam);
+            }
+
+            let nameHtml = '<option value="">氏名を選択してください</option>';
+            filteredUsers.forEach(user => {
+                nameHtml += `<option value="${user.name}">${user.name}</option>`;
+            });
+            nameSelect.innerHTML = nameHtml;
+        }
+
+        async function searchGroup() {
+            const category = document.getElementById('searchCategory').value;
+            const team = document.getElementById('teamSelect').value;
+            const name = document.getElementById('nameSelect').value; 
+            const resultDiv = document.getElementById('searchResult');
+
+            if (!name) { 
+                resultDiv.innerHTML = '<span style="color:#d32f2f;">氏名を選択してください</span>'; 
+                return; 
+            }
+            resultDiv.innerHTML = '検索中...';
+
+            try {
+                const url = `${GAS_URL}?action=searchGroup&name=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}&team=${encodeURIComponent(team)}`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.found) {
+                    const themeColor = category === '指導者' ? '#d32f2f' : '#0056b3';
+                    resultDiv.innerHTML = `
+                        <div style="border: 2px solid ${themeColor}; padding: 20px; border-radius: 12px; background-color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+                            <span style="font-size: 0.85em; color: #666; font-weight: normal;">所属: ${data.team}</span><br>
+                            <span style="font-size: 1.2em;">${data.name} 様</span><br>
+                            <div style="margin: 10px 0;">あなたは <strong style="color: ${themeColor}; font-size: 1.6em; display: inline-block; margin-top: 5px;">${data.group}</strong> グループです</div>
+                            ${data.detail ? `<hr style="border: 0; border-top: 1px dashed #ccc; margin: 15px 0;"><span style="font-size: 0.95em; color: #444;">担当: <br><strong>${data.detail}</strong></span>` : ''}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<span style="color:#666;">名簿データが見つかりません。</span>';
+                }
+            } catch (e) {
+                resultDiv.innerHTML = '<span style="color:red;">通信エラーが発生しました</span>';
+            }
+        }
+    </script>
+</body>
+</html>
