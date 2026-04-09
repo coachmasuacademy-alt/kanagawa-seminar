@@ -9,7 +9,7 @@
         * { box-sizing: border-box; }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Segoe UI", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Arial, Meiryo, sans-serif; 
-            padding: 10px; /* スマホ画面を広く使うために余白を少し減らす */
+            padding: 10px; 
             max-width: 600px; 
             margin: auto; 
             line-height: 1.6; 
@@ -28,26 +28,25 @@
         }
         h2 { font-size: 1.1em; border-left: 4px solid #0056b3; padding-left: 10px; margin-top: 0; margin-bottom: 15px; }
         
-        /* 検索エリア（指でタップしやすいサイズ感に調整） */
+        /* 検索エリア */
         .search-box { display: flex; flex-direction: column; gap: 10px; }
         .search-label { font-size: 0.85em; font-weight: bold; color: #666; margin-top: 5px; }
         
-        /* selectとinputのフォントサイズを16px以上に（iOSの自動ズーム防止） */
         select, input[type="text"] { 
             width: 100%; 
-            padding: 14px; /* タップ領域を広げる */
+            padding: 14px; 
             border: 1px solid #ccc; 
             border-radius: 8px; 
             font-size: 16px; 
             background-color: #fdfdfd; 
-            appearance: none; /* デフォルトの矢印を消してカスタマイズしやすくする */
+            appearance: none; 
         }
         
         .btn-search { 
             background-color: #0056b3; 
             color: white; 
             border: none; 
-            padding: 16px; /* ボタンを大きく */
+            padding: 16px; 
             border-radius: 8px; 
             font-size: 1.1em; 
             font-weight: bold; 
@@ -61,7 +60,7 @@
         .tab-container { display: flex; gap: 5px; margin-bottom: 10px; }
         .tab { 
             flex: 1; 
-            padding: 12px 5px; /* タップしやすく */
+            padding: 12px 5px; 
             text-align: center; 
             background: #e9ecef; 
             border-radius: 8px 8px 0 0; 
@@ -72,16 +71,16 @@
         }
         .tab.active { background: #0056b3; color: white; }
         
-        /* テーブルのスマホ対応（はみ出す場合は横スクロール） */
+        /* テーブルのスマホ対応 */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
-            -webkit-overflow-scrolling: touch; /* iOSでのスクロールを滑らかに */
+            -webkit-overflow-scrolling: touch; 
         }
         table { width: 100%; min-width: 300px; border-collapse: collapse; font-size: 0.9em; }
         th, td { border: 1px solid #eee; padding: 12px 8px; text-align: left; }
         th { background: #f8f9fa; color: #444; }
-        th:first-child, td:first-child { white-space: nowrap; width: 25%; text-align: center; font-weight: bold; } /* 時間の列が折り返されないように */
+        th:first-child, td:first-child { white-space: nowrap; width: 25%; text-align: center; font-weight: bold; }
 
         .result-area { margin-top: 20px; text-align: center; }
     </style>
@@ -156,7 +155,15 @@
                 
                 let html = ''; // 追加するHTMLを空で用意
 
-                // ▼ここが追加ポイント！「ジュニア」の時だけコート図の画像タグを挿入する
+                // ▼追加ポイント1！すべてのタブ（ジュニア、指導者A、指導者B）で座席図（seat.png）を表示する
+                html += `
+                    <div style="margin-bottom: 20px; text-align: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+                        <p style="font-size: 0.85em; font-weight: bold; color: #d32f2f; margin: 0 0 10px 0;">【ギオンアリーナ座席図・注意事項】</p>
+                        <img src="./seat.png" alt="座席図" style="max-width: 100%; height: auto; border-radius: 4px;">
+                    </div>
+                `;
+
+                // ▼追加ポイント2！「ジュニア」の時だけコート図（court.png）の画像も挿入する
                 if (category === 'ジュニア') {
                     html += `
                         <div style="margin-bottom: 20px; text-align: center; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
